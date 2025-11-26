@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 
 interface UploadPageProps {
-  onUploadComplete: (fileName: string, questionCount: number) => void;
+  onUploadComplete: (file: File, questionCount: number) => void;
 }
 
 export function UploadPage({ onUploadComplete }: UploadPageProps) {
@@ -18,10 +18,10 @@ export function UploadPage({ onUploadComplete }: UploadPageProps) {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
-      if (fileExtension === 'pdf' || fileExtension === 'docx' || fileExtension === 'doc') {
+      if (fileExtension === 'pdf' || fileExtension === 'docx' || fileExtension === 'doc' || fileExtension === 'txt') {
         setFile(selectedFile);
       } else {
-        alert('Please upload a PDF or Word document (.pdf, .doc, .docx)');
+        alert('Please upload a PDF, Word document, or text file (.pdf, .doc, .docx, .txt)');
       }
     }
   };
@@ -32,10 +32,10 @@ export function UploadPage({ onUploadComplete }: UploadPageProps) {
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       const fileExtension = droppedFile.name.split('.').pop()?.toLowerCase();
-      if (fileExtension === 'pdf' || fileExtension === 'docx' || fileExtension === 'doc') {
+      if (fileExtension === 'pdf' || fileExtension === 'docx' || fileExtension === 'doc' || fileExtension === 'txt') {
         setFile(droppedFile);
       } else {
-        alert('Please upload a PDF or Word document (.pdf, .doc, .docx)');
+        alert('Please upload a PDF, Word document, or text file (.pdf, .doc, .docx, .txt)');
       }
     }
   };
@@ -51,7 +51,7 @@ export function UploadPage({ onUploadComplete }: UploadPageProps) {
 
   const handleGenerate = () => {
     if (file) {
-      onUploadComplete(file.name, questionCount);
+      onUploadComplete(file, questionCount);
     }
   };
 
@@ -92,12 +92,12 @@ export function UploadPage({ onUploadComplete }: UploadPageProps) {
                   <div>
                     <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                     <p className="text-gray-700 mb-2">Drag and drop your file here, or click to browse</p>
-                    <p className="text-gray-500 text-sm">Supported formats: PDF, DOC, DOCX</p>
+                    <p className="text-gray-500 text-sm">Supported formats: PDF, DOC, DOCX, TXT</p>
                   </div>
                 )}
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,.doc,.docx,.txt"
                   onChange={handleFileChange}
                   className="hidden"
                   id="file-upload"

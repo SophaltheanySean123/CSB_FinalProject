@@ -5,15 +5,15 @@ import { Question } from './QuizPage';
 
 interface ResultsPageProps {
   questions: Question[];
-  answers: Record<number, number>;
+  answers: Record<number, string>;
   onRetry: () => void;
 }
 
 export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
   const calculateScore = () => {
     let correct = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correctAnswer) {
+    questions.forEach((q, index) => {
+      if (answers[index] === q.correct_answer) {
         correct++;
       }
     });
@@ -67,12 +67,12 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
           <h2 className="text-2xl text-gray-900">Review Your Answers</h2>
           
           {questions.map((question, qIndex) => {
-            const userAnswer = answers[question.id];
-            const isCorrect = userAnswer === question.correctAnswer;
+            const userAnswer = answers[qIndex];
+            const isCorrect = userAnswer === question.correct_answer;
             const wasAnswered = userAnswer !== undefined;
 
             return (
-              <Card key={question.id} className="p-6 shadow-md">
+              <Card key={qIndex} className="p-6 shadow-md">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 mt-1">
                     {isCorrect ? (
@@ -95,9 +95,9 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
                     <h3 className="text-lg text-gray-900 mb-4">{question.question}</h3>
                     
                     <div className="space-y-2">
-                      {question.options.map((option, oIndex) => {
-                        const isUserAnswer = userAnswer === oIndex;
-                        const isCorrectAnswer = oIndex === question.correctAnswer;
+                      {Object.entries(question.options).map(([key, option]) => {
+                        const isUserAnswer = userAnswer === key;
+                        const isCorrectAnswer = key === question.correct_answer;
                         
                         let bgColor = 'bg-gray-50';
                         let borderColor = 'border-gray-200';
@@ -115,12 +115,12 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
                         
                         return (
                           <div
-                            key={oIndex}
+                            key={key}
                             className={`p-3 rounded-lg border-2 ${bgColor} ${borderColor}`}
                           >
                             <div className="flex items-center justify-between">
                               <span className={textColor}>
-                                <span className="mr-2">{String.fromCharCode(65 + oIndex)}.</span>
+                                <span className="mr-2">{key}.</span>
                                 {option}
                               </span>
                               {isCorrectAnswer && (
