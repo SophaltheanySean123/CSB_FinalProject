@@ -1,19 +1,22 @@
+
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { CheckCircle, XCircle, Award, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Award, RotateCcw, Download } from 'lucide-react';
 import { Question } from './QuizPage';
+import { saveAs } from 'file-saver';
+import Papa from 'papaparse';
 
 interface ResultsPageProps {
   questions: Question[];
-  answers: Record<number, number>;
+  answers: Record<number, string>;
   onRetry: () => void;
 }
 
 export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
   const calculateScore = () => {
     let correct = 0;
-    questions.forEach((q) => {
-      if (answers[q.id] === q.correctAnswer) {
+    questions.forEach((q, index) => {
+      if (answers[index] === q.correct_answer) {
         correct++;
       }
     });
@@ -22,6 +25,36 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
 
   const score = calculateScore();
   const percentage = Math.round((score / questions.length) * 100);
+
+  // Export as JSON
+  const handleExportJSON = () => {
+    const exportData = questions.map((q, idx) => ({
+      question: q.question,
+      options: q.options,
+      correct_answer: q.correct_answer,
+      user_answer: answers[idx] || '',
+      explanation: q.explanation || '',
+    }));
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    saveAs(blob, 'quiz_results.json');
+  };
+
+  // Export as CSV
+  const handleExportCSV = () => {
+    const exportData = questions.map((q, idx) => ({
+      question: q.question,
+      option_A: q.options.A,
+      option_B: q.options.B,
+      option_C: q.options.C,
+      option_D: q.options.D,
+      correct_answer: q.correct_answer,
+      user_answer: answers[idx] || '',
+      explanation: q.explanation || '',
+    }));
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    saveAs(blob, 'quiz_results.csv');
+  };
 
   const getScoreColor = () => {
     if (percentage >= 80) return 'text-green-600';
@@ -59,6 +92,14 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
               <RotateCcw className="w-4 h-4 mr-2" />
               Start New Quiz
             </Button>
+            <Button onClick={handleExportJSON} className="bg-green-600 hover:bg-green-700 text-white px-8" title="Export as JSON">
+              <Download className="w-4 h-4 mr-2" />
+              Export JSON
+            </Button>
+            <Button onClick={handleExportCSV} className="bg-blue-600 hover:bg-blue-700 text-white px-8" title="Export as CSV">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
           </div>
         </Card>
 
@@ -67,12 +108,12 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
           <h2 className="text-2xl text-gray-900">Review Your Answers</h2>
           
           {questions.map((question, qIndex) => {
-            const userAnswer = answers[question.id];
-            const isCorrect = userAnswer === question.correctAnswer;
+            const userAnswer = answers[qIndex];
+            const isCorrect = userAnswer === question.correct_answer;
             const wasAnswered = userAnswer !== undefined;
 
             return (
-              <Card key={question.id} className="p-6 shadow-md">
+              <Card key={qIndex} className="p-6 shadow-md">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 mt-1">
                     {isCorrect ? (
@@ -95,9 +136,9 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
                     <h3 className="text-lg text-gray-900 mb-4">{question.question}</h3>
                     
                     <div className="space-y-2">
-                      {question.options.map((option, oIndex) => {
-                        const isUserAnswer = userAnswer === oIndex;
-                        const isCorrectAnswer = oIndex === question.correctAnswer;
+                      {Object.entries(question.options).map(([key, option]) => {
+                        const isUserAnswer = userAnswer === key;
+                        const isCorrectAnswer = key === question.correct_answer;
                         
                         let bgColor = 'bg-gray-50';
                         let borderColor = 'border-gray-200';
@@ -115,12 +156,12 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
                         
                         return (
                           <div
-                            key={oIndex}
+                            key={key}
                             className={`p-3 rounded-lg border-2 ${bgColor} ${borderColor}`}
                           >
                             <div className="flex items-center justify-between">
                               <span className={textColor}>
-                                <span className="mr-2">{String.fromCharCode(65 + oIndex)}.</span>
+                                <span className="mr-2">{key}.</span>
                                 {option}
                               </span>
                               {isCorrectAnswer && (

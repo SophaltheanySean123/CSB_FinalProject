@@ -5,260 +5,88 @@ import { ResultsPage } from './components/ResultsPage';
 
 type AppState = 'upload' | 'quiz' | 'results';
 
-// Mock quiz generation function - in production, this would call an AI API
-function generateMockQuiz(questionCount: number): Question[] {
-  const topics = [
-    {
-      topic: 'Photosynthesis',
-      questions: [
-        {
-          question: 'What is the primary function of chlorophyll in photosynthesis?',
-          options: [
-            'To store glucose',
-            'To absorb light energy',
-            'To release oxygen',
-            'To transport water'
-          ],
-          correctAnswer: 1
-        },
-        {
-          question: 'Which of the following is NOT a product of photosynthesis?',
-          options: [
-            'Oxygen',
-            'Glucose',
-            'Carbon dioxide',
-            'Water'
-          ],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      topic: 'Cell Biology',
-      questions: [
-        {
-          question: 'What is the powerhouse of the cell?',
-          options: [
-            'Nucleus',
-            'Ribosome',
-            'Mitochondria',
-            'Golgi apparatus'
-          ],
-          correctAnswer: 2
-        },
-        {
-          question: 'Which organelle is responsible for protein synthesis?',
-          options: [
-            'Ribosome',
-            'Lysosome',
-            'Peroxisome',
-            'Vacuole'
-          ],
-          correctAnswer: 0
-        }
-      ]
-    },
-    {
-      topic: 'Genetics',
-      questions: [
-        {
-          question: 'What does DNA stand for?',
-          options: [
-            'Deoxyribonucleic Acid',
-            'Diribonucleic Acid',
-            'Deoxyribonuclear Acid',
-            'Dynamic Nuclear Acid'
-          ],
-          correctAnswer: 0
-        },
-        {
-          question: 'How many chromosomes do humans typically have?',
-          options: [
-            '23',
-            '42',
-            '46',
-            '48'
-          ],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      topic: 'Ecology',
-      questions: [
-        {
-          question: 'What is a primary producer in an ecosystem?',
-          options: [
-            'Herbivore',
-            'Carnivore',
-            'Plant',
-            'Decomposer'
-          ],
-          correctAnswer: 2
-        },
-        {
-          question: 'Which process describes the water cycle returning to the atmosphere?',
-          options: [
-            'Precipitation',
-            'Condensation',
-            'Evaporation',
-            'Filtration'
-          ],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      topic: 'Chemistry',
-      questions: [
-        {
-          question: 'What is the chemical symbol for gold?',
-          options: [
-            'Go',
-            'Au',
-            'Gd',
-            'Ag'
-          ],
-          correctAnswer: 1
-        },
-        {
-          question: 'What is the pH of a neutral solution?',
-          options: [
-            '0',
-            '7',
-            '10',
-            '14'
-          ],
-          correctAnswer: 1
-        }
-      ]
-    },
-    {
-      topic: 'Physics',
-      questions: [
-        {
-          question: 'What is the speed of light in a vacuum?',
-          options: [
-            '299,792,458 m/s',
-            '300,000 m/s',
-            '3,000 km/s',
-            '186,000 km/s'
-          ],
-          correctAnswer: 0
-        },
-        {
-          question: 'What law states that for every action, there is an equal and opposite reaction?',
-          options: [
-            'First Law of Motion',
-            'Second Law of Motion',
-            'Third Law of Motion',
-            'Law of Gravitation'
-          ],
-          correctAnswer: 2
-        }
-      ]
-    },
-    {
-      topic: 'Mathematics',
-      questions: [
-        {
-          question: 'What is the value of π (pi) approximately?',
-          options: [
-            '3.14',
-            '2.71',
-            '1.61',
-            '4.20'
-          ],
-          correctAnswer: 0
-        },
-        {
-          question: 'What is the Pythagorean theorem?',
-          options: [
-            'a + b = c',
-            'a² + b² = c²',
-            'a × b = c',
-            'a² - b² = c²'
-          ],
-          correctAnswer: 1
-        }
-      ]
-    },
-    {
-      topic: 'History',
-      questions: [
-        {
-          question: 'In which year did World War II end?',
-          options: [
-            '1943',
-            '1944',
-            '1945',
-            '1946'
-          ],
-          correctAnswer: 2
-        },
-        {
-          question: 'Who was the first president of the United States?',
-          options: [
-            'Thomas Jefferson',
-            'George Washington',
-            'John Adams',
-            'Benjamin Franklin'
-          ],
-          correctAnswer: 1
-        }
-      ]
-    }
-  ];
-
-  const allQuestions: Question[] = [];
-  let questionId = 0;
-
-  // Flatten all questions
-  topics.forEach(topic => {
-    topic.questions.forEach(q => {
-      allQuestions.push({
-        id: questionId++,
-        ...q
-      });
-    });
-  });
-
-  // Shuffle and select the requested number of questions
-  const shuffled = allQuestions.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(questionCount, allQuestions.length));
-}
-
 export default function App() {
   const [appState, setAppState] = useState<AppState>('upload');
   const [fileName, setFileName] = useState<string>('');
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
-  const handleUploadComplete = (uploadedFileName: string, questionCount: number) => {
-    setFileName(uploadedFileName);
-    // Simulate quiz generation with a small delay
-    setTimeout(() => {
-      const generatedQuestions = generateMockQuiz(questionCount);
-      setQuestions(generatedQuestions);
-      setAppState('quiz');
-    }, 1000);
+  // Call FastAPI /generate_quiz endpoint
+  const generateQuizFromBackend = async (file: File, questionCount: number) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('num_of_questions', questionCount.toString());
+      
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('Question count:', questionCount);
+      
+      const response = await fetch('http://127.0.0.1:8000/generate_quiz', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        const errorMessage = errorData.detail || response.statusText;
+        
+        if (response.status === 503 && errorMessage.includes('Rate limit')) {
+          throw new Error('⏳ API rate limit reached. Please wait 30 seconds and try again.');
+        }
+        throw new Error(`Backend error: ${errorMessage}`);
+      }
+      
+      const data = await response.json();
+      console.log('Backend response:', data);
+      console.log('Questions:', data.questions);
+      return data.questions as Question[];
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Failed to generate quiz.');
+      return [];
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleQuizSubmit = (userAnswers: Record<number, number>) => {
+  // Handle upload completion
+  const handleUploadComplete = async (file: File, questionCount: number) => {
+    setFileName(file.name);
+    const generatedQuestions = await generateQuizFromBackend(file, questionCount);
+    if (generatedQuestions.length > 0) {
+      setQuestions(generatedQuestions);
+      setAppState('quiz');
+    }
+  };
+
+  // Handle quiz submission
+  const handleQuizSubmit = (userAnswers: Record<number, string>) => {
     setAnswers(userAnswers);
     setAppState('results');
   };
 
+  // Retry flow
   const handleRetry = () => {
     setAppState('upload');
     setFileName('');
     setQuestions([]);
     setAnswers({});
+    setError('');
   };
 
   return (
     <>
-      {appState === 'upload' && <UploadPage onUploadComplete={handleUploadComplete} />}
+      {loading && <p style={{ padding: '10px', color: 'blue' }}>Generating quiz, please wait...</p>}
+      {error && <p style={{ padding: '10px', color: 'red' }}>Error: {error}</p>}
+
+      {appState === 'upload' && (
+        <UploadPage onUploadComplete={handleUploadComplete} />
+      )}
       {appState === 'quiz' && (
         <QuizPage questions={questions} fileName={fileName} onSubmit={handleQuizSubmit} />
       )}
