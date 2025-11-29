@@ -1,7 +1,10 @@
+
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { CheckCircle, XCircle, Award, RotateCcw } from 'lucide-react';
+import { CheckCircle, XCircle, Award, RotateCcw, Download } from 'lucide-react';
 import { Question } from './QuizPage';
+import { saveAs } from 'file-saver';
+import Papa from 'papaparse';
 
 interface ResultsPageProps {
   questions: Question[];
@@ -22,6 +25,36 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
 
   const score = calculateScore();
   const percentage = Math.round((score / questions.length) * 100);
+
+  // Export as JSON
+  const handleExportJSON = () => {
+    const exportData = questions.map((q, idx) => ({
+      question: q.question,
+      options: q.options,
+      correct_answer: q.correct_answer,
+      user_answer: answers[idx] || '',
+      explanation: q.explanation || '',
+    }));
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    saveAs(blob, 'quiz_results.json');
+  };
+
+  // Export as CSV
+  const handleExportCSV = () => {
+    const exportData = questions.map((q, idx) => ({
+      question: q.question,
+      option_A: q.options.A,
+      option_B: q.options.B,
+      option_C: q.options.C,
+      option_D: q.options.D,
+      correct_answer: q.correct_answer,
+      user_answer: answers[idx] || '',
+      explanation: q.explanation || '',
+    }));
+    const csv = Papa.unparse(exportData);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    saveAs(blob, 'quiz_results.csv');
+  };
 
   const getScoreColor = () => {
     if (percentage >= 80) return 'text-green-600';
@@ -58,6 +91,14 @@ export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
             <Button onClick={onRetry} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8">
               <RotateCcw className="w-4 h-4 mr-2" />
               Start New Quiz
+            </Button>
+            <Button onClick={handleExportJSON} className="bg-green-600 hover:bg-green-700 text-white px-8" title="Export as JSON">
+              <Download className="w-4 h-4 mr-2" />
+              Export JSON
+            </Button>
+            <Button onClick={handleExportCSV} className="bg-blue-600 hover:bg-blue-700 text-white px-8" title="Export as CSV">
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
             </Button>
           </div>
         </Card>
