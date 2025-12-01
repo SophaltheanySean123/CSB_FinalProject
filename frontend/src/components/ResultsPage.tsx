@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { CheckCircle, XCircle, Award, RotateCcw, Download } from 'lucide-react';
@@ -10,9 +10,10 @@ interface ResultsPageProps {
   questions: Question[];
   answers: Record<number, string>;
   onRetry: () => void;
+  onRetakeRequest?: (numQuestions: number) => void;
 }
 
-export function ResultsPage({ questions, answers, onRetry }: ResultsPageProps) {
+export function ResultsPage({ questions, answers, onRetry, onRetakeRequest }: ResultsPageProps) {
   const calculateScore = () => {
     let correct = 0;
     questions.forEach((q, index) => {
