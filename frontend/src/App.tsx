@@ -65,7 +65,8 @@ export default function App() {
     if (generatedQuestions.length > 0) {
       setQuestions(generatedQuestions);
       // Cache questions in backend with a session id so retake can reuse
-      const sid = `session_${Date.now()}`;
+      // Reuse existing sessionId if available, otherwise create new one
+      const sid = sessionId || `session_${Date.now()}`;
       try {
         await fetch('http://localhost:8000/api/quiz/upload', {
           method: 'POST',
@@ -95,7 +96,8 @@ export default function App() {
     setQuestions([]);
     setAnswers({});
     setError('');
-    setSessionId('');
+    // Don't reset sessionId - keep it to accumulate analytics across retakes
+    // setSessionId('');
     setQuizTiming(null);
   };
 

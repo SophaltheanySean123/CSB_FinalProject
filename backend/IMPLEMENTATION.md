@@ -1,6 +1,3 @@
-# Flask Implementation Guide
-
-This project now includes Flask blueprint implementation for quiz management using advanced data structures.
 
 ## Files Created/Modified
 
@@ -61,7 +58,7 @@ This project now includes Flask blueprint implementation for quiz management usi
 
 ```bash
 cd CSB_FinalProject/backend
-python flask_main.py
+python main.py
 ```
 
 The Flask API will run on `http://127.0.0.1:8001`
@@ -119,8 +116,8 @@ import { QuizRetake } from './components/QuizRetake';
 
 ## Notes
 
-- The Flask blueprint is in `routes/flask_quiz.py` to avoid conflicts with the existing FastAPI routes
-- Both FastAPI and Flask implementations use the same `quiz_manager` instance
+- The Flask blueprint is in `routes/quiz.py` 
+- FastAPI implementations use `quiz_manager` 
 - The frontend component defaults to FastAPI port (8000) but can be configured
 - All data structures maintain O(1) complexity for critical operations
 

@@ -85,7 +85,10 @@ async def get_session_analytics(session_id: str):
                     'timestamp': quiz['timestamp']
                 })
         
-        df = pd.DataFrame(all_questions)
+        # Calculate overall statistics - sum all questions from all quiz attempts
+        total_correct = sum(q['score'] for q in history)
+        total_questions = sum(q['total'] for q in history)  # Sum actual totals from each quiz attempt
+        overall_accuracy = (total_correct / total_questions * 100) if total_questions > 0 else 0
         
         # Calculate analytics using pandas
         analytics = calculate_analytics(df, session_quizzes)
