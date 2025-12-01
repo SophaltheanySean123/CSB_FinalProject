@@ -46,20 +46,6 @@ async def generate_quiz(
         if not result.get("success"):
             raise HTTPException(503, result.get("message", "Failed to generate quiz"))
 
-        # Save raw Gemini response to JSON file
-        import json
-        from datetime import datetime
-        os.makedirs("gemini_responses", exist_ok=True)
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        response_file = f"gemini_responses/gemini_response_{timestamp}.json"
-        with open(response_file, "w", encoding="utf-8") as f:
-            json.dump({
-                "timestamp": timestamp,
-                "raw_response": result["text"],
-                "num_questions": num_of_questions,
-                "file_name": file.filename
-            }, f, indent=2, ensure_ascii=False)
-        print(f"✅ Saved Gemini response to: {response_file}")
 
         # Parse & validate JSON
         quiz_data = parse_JSON_quiz(result["text"])
