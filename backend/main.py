@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
-from routes import health, quiz, analytics
+
+from routes.health import router as health_router
+from routes.quiz import router as quiz_router
+from routes.analytics import router as analytics_router
 
 load_dotenv()
 
@@ -12,35 +15,45 @@ if not API_KEY:
 
 app = FastAPI(
     title="AI Generated QUIZ",
-    version="1.0.0.0",
-    description="Generated Quiz from PDF or DOCX file using GEMINI AI"
+    version="1.0.0",
+    description="Generated Quiz from PDF or DOCX file using GEMINI AI",
 )
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=["*"]
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(health.router, tags=["health"])
-app.include_router(quiz.router, tags=["Quiz"])
-app.include_router(analytics.router, tags=["Analytics"])
+# Register routers
+app.include_router(health_router, tags=["Health"])
+app.include_router(quiz_router, tags=["Quiz"])
+app.include_router(analytics_router, tags=["Analytics"])
+
 
 @app.get("/")
 async def root():
-    "API INFORMATION"
-    return{
-        "service": "AI GENERATED QUIZ",
-        "version" : "1.0.0",
-        "status" : "online",
-        "endpoint" : {
-            "GET /heath" : "Check endpoint health",
-            "POST /Quiz" : "Generate Quiz from PDF/DOCX files",
-            "GET /docs" : "API documentation"              
-            ""
-         }
+    return {
+        "service": "AI GENERATED QUIZ - FastAPI",
+        "version": "1.0.0",
+        "status": "online",
+        "framework": "FastAPI",
+        "data_structures": {
+            "hash_map": "QuestionCache - O(1) storage/retrieval",
+            "queue": "QuizQueue (deque) - O(1) FIFO operations",
+            "stack": "QuizHistory (list) - O(1) LIFO operations",
+            "set": "used_questions - O(1) lookup"
+        },
+        "endpoints": {
+            "POST /api/quiz/upload": "Upload and cache questions (Hash Map)",
+            "POST /api/quiz/generate": "Generate quiz (Queue + Set)",
+            "POST /api/quiz/submit": "Submit quiz results (Stack)",
+            "GET /api/quiz/stats/{session_id}": "Get session statistics",
+            "POST /api/quiz/reset": "Reset question pool",
+            "GET /api/quiz/check-cache/{session_id}": "Check cache status"
+        }
     }
 
 if __name__ == "__main__":
