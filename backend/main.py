@@ -2,9 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
-from routes import health,quiz
-
-
+from routes import health, quiz, analytics
 
 load_dotenv()
 
@@ -28,6 +26,7 @@ app.add_middleware(
 
 app.include_router(health.router, tags=["health"])
 app.include_router(quiz.router, tags=["Quiz"])
+app.include_router(analytics.router, tags=["Analytics"])
 
 @app.get("/")
 async def root():

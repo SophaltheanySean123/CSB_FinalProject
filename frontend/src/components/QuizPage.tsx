@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
@@ -21,12 +21,33 @@ export interface Question {
 interface QuizPageProps {
   questions: Question[];
   fileName: string;
-  onSubmit: (answers: Record<number, string>) => void;
+  onSubmit: (payload: { answers: Record<number, string>, start_time?: number, end_time?: number, total_time?: number, per_question_time?: number[], sessionId?: string }) => void;
+  sessionId?: string;
 }
 
-export function QuizPage({ questions, fileName, onSubmit }: QuizPageProps) {
+export function QuizPage({ questions, fileName, onSubmit, sessionId }: QuizPageProps) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [startTime, setStartTime] = useState<number>(Date.now());
+  const [questionStartTimes, setQuestionStartTimes] = useState<Record<number, number>>({});
+  
+  const handleQuestionStart = (index: number) => {
+    setQuestionStartTimes(prev => {
+      if (!prev[index]) {
+        return { ...prev, [index]: Date.now() };
+      }
+      return prev;
+    });
+  };
+  
+  // Reset quiz state when questions change (for retakes)
+  useEffect(() => {
+    const newStartTime = Date.now();
+    setAnswers({});
+    setCurrentQuestion(0);
+    setStartTime(newStartTime);
+    setQuestionStartTimes({ 0: newStartTime }); // Initialize first question timer
+  }, [questions]);
 
   const handleAnswerSelect = (questionIndex: number, answerKey: string) => {
     setAnswers((prev) => ({
@@ -36,12 +57,14 @@ export function QuizPage({ questions, fileName, onSubmit }: QuizPageProps) {
   };
 
   const handleNext = () => {
+    handleQuestionStart(currentQuestion + 1);
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
 
   const handlePrevious = () => {
+    if (currentQuestion === 0) handleQuestionStart(0);
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
     }
@@ -55,9 +78,31 @@ export function QuizPage({ questions, fileName, onSubmit }: QuizPageProps) {
       );
       if (!confirm) return;
     }
-    onSubmit(answers || {});
+    
+    const endTime = Date.now();
+    const totalTime = Math.round((endTime - startTime) / 1000); // seconds
+    
+    // Calculate per-question timing
+    const perQuestionTime = questions.map((_, idx) => {
+      const qStart = questionStartTimes[idx] || startTime;
+      const qEnd = questionStartTimes[idx + 1] || endTime;
+      return Math.round((qEnd - qStart) / 1000);
+    });
+    
+    onSubmit({
+      answers: answers || {},
+      start_time: startTime,
+      end_time: endTime,
+      total_time: totalTime,
+      per_question_time: perQuestionTime,
+      sessionId: sessionId || undefined
+    });
   };
 
+  // Initialize first question timer on component mount
+  useEffect(() => {
+    handleQuestionStart(0);
+  }, []);
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
   const answeredCount = Object.keys(answers).length;
   const question = questions[currentQuestion];
